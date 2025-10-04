@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Al Farooq Kidney Center - Patient Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo-section">
+                <div class="logo-icon">
+                    <i class="fas fa-hospital"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>Al Farooq Kidney Center</h1>
+                    <p>Patient Appointment Management</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-refresh" onclick="refreshDashboard()">
+                    <i class="fas fa-sync-alt"></i>
+                    <span>Refresh</span>
+                </button>
+                <button class="btn btn-list" onclick="scrollToPatientList()">
+                    <i class="fas fa-list"></i>
+                    <span>Patient List</span>
+                </button>
+                <button class="btn btn-reset" onclick="showResetModal()">
+                    <i class="fas fa-undo"></i>
+                    <span>Reset All</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Dashboard Stats -->
+        <div class="stats-section">
+            <div class="stat-card total">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="totalPatients">0</h3>
+                    <p>Total Patients</p>
+                </div>
+            </div>
+            <div class="stat-card umar">
+                <div class="stat-icon">
+                    <i class="fas fa-user-md"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="umarPatients">0</h3>
+                    <p>Dr. Umar Farooq</p>
+                </div>
+            </div>
+            <div class="stat-card samreen">
+                <div class="stat-icon">
+                    <i class="fas fa-user-nurse"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="samreenPatients">0</h3>
+                    <p>Dr. Samreen Malik</p>
+                </div>
+            </div>
+            <div class="stat-card today">
+                <div class="stat-icon">
+                    <i class="fas fa-calendar-day"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="todayPatients">0</h3>
+                    <p>Today's Patients</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Add Patient Section -->
+            <div class="add-patient-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-user-plus"></i> Add New Patient</h2>
+                </div>
+                <div class="add-patient-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="patientName">Patient Name *</label>
+                            <input type="text" id="patientName" placeholder="Enter patient name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Select Doctor *</label>
+                            <div class="doctor-selection">
+                                <div class="doctor-option" onclick="selectDoctor('Dr. Umar Farooq')">
+                                    <input type="radio" id="doctorUmar" name="doctor" value="Dr. Umar Farooq">
+                                    <label for="doctorUmar" class="doctor-label umar">
+                                        <i class="fas fa-user-md"></i>
+                                        <span>Dr. Umar Farooq</span>
+                                        <i class="fas fa-check"></i>
+                                    </label>
+                                </div>
+                                <div class="doctor-option" onclick="selectDoctor('Dr. Samreen Malik')">
+                                    <input type="radio" id="doctorSamreen" name="doctor" value="Dr. Samreen Malik">
+                                    <label for="doctorSamreen" class="doctor-label samreen">
+                                        <i class="fas fa-user-nurse"></i>
+                                        <span>Dr. Samreen Malik</span>
+                                        <i class="fas fa-check"></i>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="appointment-number-display" id="appointmentNumberDisplay">
+                        <span id="appointmentNumberText">Select Doctor to Generate Number</span>
+                    </div>
+                    <button class="btn btn-save" onclick="addPatient()">
+                        <i class="fas fa-save"></i>
+                        <span>Add/Save Patient</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Patient Lists Section -->
+            <div class="patient-lists-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-list"></i> Patient Appointment Lists</h2>
+                    <div class="filter-controls">
+                        <select id="doctorFilter" onchange="filterPatients()">
+                            <option value="">All Doctors</option>
+                            <option value="Dr. Umar Farooq">Dr. Umar Farooq</option>
+                            <option value="Dr. Samreen Malik">Dr. Samreen Malik</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Dr. Umar Farooq Patients -->
+                <div class="doctor-section umar-section">
+                    <div class="doctor-header">
+                        <div class="doctor-info">
+                            <i class="fas fa-user-md"></i>
+                            <h3>Dr. Umar Farooq</h3>
+                            <span class="patient-count" id="umarCount">0 patients</span>
+                        </div>
+                    </div>
+                    <div class="patient-list" id="umarPatientsList">
+                        <!-- Patients will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Dr. Samreen Malik Patients -->
+                <div class="doctor-section samreen-section">
+                    <div class="doctor-header">
+                        <div class="doctor-info">
+                            <i class="fas fa-user-nurse"></i>
+                            <h3>Dr. Samreen Malik</h3>
+                            <span class="patient-count" id="samreenCount">0 patients</span>
+                        </div>
+                    </div>
+                    <div class="patient-list" id="samreenPatientsList">
+                        <!-- Patients will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Modal -->
+    <div id="resetModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-exclamation-triangle"></i> Reset All Data</h2>
+                <span class="close" onclick="closeResetModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="warning-message">
+                    <i class="fas fa-warning"></i>
+                    <p>This action will permanently delete ALL patient data and reset the system. This cannot be undone!</p>
+                </div>
+                <div class="form-group">
+                    <label for="resetPassword">Enter Password to Confirm:</label>
+                    <input type="password" id="resetPassword" placeholder="Enter password" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-cancel" onclick="closeResetModal()">Cancel</button>
+                <button class="btn btn-danger" onclick="resetAllData()">Reset All Data</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
