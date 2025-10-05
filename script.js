@@ -1,18 +1,35 @@
 // Patient Appointment Dashboard for Al Farooq Kidney Center
 class PatientDashboard {
     constructor() {
-        this.patients = this.loadPatients();
-        this.umarCounter = this.getDoctorCounter('umar');
-        this.samreenCounter = this.getDoctorCounter('samreen');
+        this.patients = [];
+        this.umarCounter = 0;
+        this.samreenCounter = 0;
         this.resetPassword = 'admin123'; // Default password for reset
+        this.db = null;
         this.init();
     }
 
-    init() {
+    async init() {
+        // Wait for Firebase to be available
+        await this.waitForFirebase();
         this.setupEventListeners();
-        this.updateStats();
-        this.displayPatients();
+        await this.loadDataFromFirestore();
+        this.setupRealTimeListener();
         this.setupDailyRefresh();
+    }
+
+    async waitForFirebase() {
+        return new Promise((resolve) => {
+            const checkFirebase = () => {
+                if (window.db) {
+                    this.db = window.db;
+                    resolve();
+                } else {
+                    setTimeout(checkFirebase, 100);
+                }
+            };
+            checkFirebase();
+        });
     }
 
     setupEventListeners() {
@@ -76,22 +93,86 @@ class PatientDashboard {
         console.log('Daily data refreshed - appointment counters reset');
     }
 
-    loadPatients() {
-        const saved = localStorage.getItem('patients');
-        return saved ? JSON.parse(saved) : [];
+    async loadDataFromFirestore() {
+        try {
+            // Load patients
+            const patientsQuery = query(collection(this.db, 'patients'), orderBy('dateAdded', 'desc'));
+            const patientsSnapshot = await getDocs(patientsQuery);
+            this.patients = patientsSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            // Load counters
+            const countersDoc = await getDocs(collection(this.db, 'counters'));
+            if (!countersDoc.empty) {
+                const countersData = countersDoc.docs[0].data();
+                this.umarCounter = countersData.umarCounter || 0;
+                this.samreenCounter = countersData.samreenCounter || 0;
+            }
+
+            this.updateStats();
+            this.displayPatients();
+        } catch (error) {
+            console.error('Error loading data from Firestore:', error);
+            this.showErrorMessage('Failed to load data from database');
+        }
     }
 
-    savePatients() {
-        localStorage.setItem('patients', JSON.stringify(this.patients));
+    setupRealTimeListener() {
+        // Listen for real-time updates
+        const patientsQuery = query(collection(this.db, 'patients'), orderBy('dateAdded', 'desc'));
+        onSnapshot(patientsQuery, (snapshot) => {
+            this.patients = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            this.updateStats();
+            this.displayPatients();
+        });
+
+        // Listen for counter updates
+        const countersQuery = query(collection(this.db, 'counters'));
+        onSnapshot(countersQuery, (snapshot) => {
+            if (!snapshot.empty) {
+                const countersData = snapshot.docs[0].data();
+                this.umarCounter = countersData.umarCounter || 0;
+                this.samreenCounter = countersData.samreenCounter || 0;
+                this.updateStats();
+            }
+        });
     }
 
-    getDoctorCounter(doctor) {
-        const saved = localStorage.getItem(`${doctor}Counter`);
-        return saved ? parseInt(saved) : 0;
+    async savePatients() {
+        // This method is no longer needed as we use real-time listeners
+        // But keeping it for compatibility
     }
 
-    saveDoctorCounter(doctor, counter) {
-        localStorage.setItem(`${doctor}Counter`, counter.toString());
+    async saveDoctorCounter(doctor, counter) {
+        try {
+            const countersRef = collection(this.db, 'counters');
+            const countersSnapshot = await getDocs(countersRef);
+            
+            if (countersSnapshot.empty) {
+                // Create new counters document
+                await addDoc(countersRef, {
+                    umarCounter: doctor === 'umar' ? counter : 0,
+                    samreenCounter: doctor === 'samreen' ? counter : 0,
+                    lastUpdated: new Date().toISOString()
+                });
+            } else {
+                // Update existing counters document
+                const docId = countersSnapshot.docs[0].id;
+                const updateData = {
+                    lastUpdated: new Date().toISOString()
+                };
+                updateData[`${doctor}Counter`] = counter;
+                
+                await updateDoc(doc(this.db, 'counters', docId), updateData);
+            }
+        } catch (error) {
+            console.error('Error saving counter:', error);
+        }
     }
 
     generateAppointmentNumber(doctor) {
@@ -153,7 +234,7 @@ class PatientDashboard {
         return '';
     }
 
-    addPatient() {
+    async addPatient() {
         const patientName = document.getElementById('patientName').value.trim();
         const umarChecked = document.getElementById('doctorUmar').checked;
         const samreenChecked = document.getElementById('doctorSamreen').checked;
@@ -178,7 +259,6 @@ class PatientDashboard {
         const appointmentNumber = this.generateAppointmentNumber(doctor);
         
         const patient = {
-            id: Date.now().toString(),
             name: patientName,
             doctor: doctor,
             appointmentNumber: appointmentNumber,
@@ -186,23 +266,26 @@ class PatientDashboard {
             status: 'Active'
         };
         
-        this.patients.unshift(patient);
-        this.savePatients();
-        this.updateStats();
-        this.displayPatients();
-        
-        // Reset form
-        document.getElementById('patientName').value = '';
-        document.getElementById('doctorUmar').checked = false;
-        document.getElementById('doctorSamreen').checked = false;
-        
-        const display = document.getElementById('appointmentNumberDisplay');
-        const text = document.getElementById('appointmentNumberText');
-        text.textContent = 'Select Doctor to Generate Number';
-        display.className = 'appointment-number-display placeholder';
-        
-        // Show success message
-        this.showSuccessMessage(`Patient ${patientName} added successfully with appointment number ${appointmentNumber}`);
+        try {
+            // Add patient to Firestore
+            await addDoc(collection(this.db, 'patients'), patient);
+            
+            // Reset form
+            document.getElementById('patientName').value = '';
+            document.getElementById('doctorUmar').checked = false;
+            document.getElementById('doctorSamreen').checked = false;
+            
+            const display = document.getElementById('appointmentNumberDisplay');
+            const text = document.getElementById('appointmentNumberText');
+            text.textContent = 'Select Doctor to Generate Number';
+            display.className = 'appointment-number-display placeholder';
+            
+            // Show success message
+            this.showSuccessMessage(`Patient ${patientName} added successfully with appointment number ${appointmentNumber}`);
+        } catch (error) {
+            console.error('Error adding patient:', error);
+            this.showErrorMessage('Failed to add patient. Please try again.');
+        }
     }
 
     showSuccessMessage(message) {
@@ -227,6 +310,30 @@ class PatientDashboard {
         setTimeout(() => {
             successDiv.remove();
         }, 3000);
+    }
+
+    showErrorMessage(message) {
+        // Create a temporary error message
+        const errorDiv = document.createElement('div');
+        errorDiv.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(220, 53, 69, 0.3);
+            z-index: 1000;
+            font-weight: 600;
+            animation: slideIn 0.3s ease;
+        `;
+        errorDiv.textContent = message;
+        document.body.appendChild(errorDiv);
+        
+        setTimeout(() => {
+            errorDiv.remove();
+        }, 5000);
     }
 
     updateStats() {
@@ -301,7 +408,7 @@ class PatientDashboard {
         this.displayPatients();
     }
 
-    resetAllData() {
+    async resetAllData() {
         const password = document.getElementById('resetPassword').value;
         
         if (password !== this.resetPassword) {
@@ -310,19 +417,24 @@ class PatientDashboard {
         }
         
         if (confirm('Are you sure you want to reset ALL data? This cannot be undone!')) {
-            this.patients = [];
-            this.umarCounter = 0;
-            this.samreenCounter = 0;
-            
-            this.savePatients();
-            this.saveDoctorCounter('umar', 0);
-            this.saveDoctorCounter('samreen', 0);
-            
-            this.updateStats();
-            this.displayPatients();
-            
-            this.closeResetModal();
-            this.showSuccessMessage('All data has been reset successfully!');
+            try {
+                // Delete all patients
+                const patientsSnapshot = await getDocs(collection(this.db, 'patients'));
+                const deletePromises = patientsSnapshot.docs.map(doc => deleteDoc(doc.ref));
+                await Promise.all(deletePromises);
+                
+                // Reset counters
+                this.umarCounter = 0;
+                this.samreenCounter = 0;
+                await this.saveDoctorCounter('umar', 0);
+                await this.saveDoctorCounter('samreen', 0);
+                
+                this.closeResetModal();
+                this.showSuccessMessage('All data has been reset successfully!');
+            } catch (error) {
+                console.error('Error resetting data:', error);
+                this.showErrorMessage('Failed to reset data. Please try again.');
+            }
         }
     }
 
