@@ -6,6 +6,10 @@ class PatientDashboard {
         this.samreenCounter = 0;
         this.resetPassword = 'admin123'; // Default password for reset
         this.db = null;
+        // Frozen patient numbers for Dr. Umar Farooq - cannot be edited or deleted
+        this.frozenUmarNumbers = [1, 2, 3, 10, 15, 20];
+        // Frozen patient numbers for Dr. Samreen Malik - cannot be edited or deleted
+        this.frozenSamreenNumbers = [1, 2, 3, 6, 7, 10, 11, 15, 16, 19, 20, 23, 24, 27, 29, 32, 33, 36, 37];
         this.init();
     }
 
@@ -178,10 +182,18 @@ class PatientDashboard {
     generateAppointmentNumber(doctor) {
         if (doctor === 'Dr. Umar Farooq') {
             this.umarCounter++;
+            // Skip frozen numbers
+            while (this.frozenUmarNumbers.includes(this.umarCounter)) {
+                this.umarCounter++;
+            }
             this.saveDoctorCounter('umar', this.umarCounter);
             return `UMAR-#${this.umarCounter}`;
         } else if (doctor === 'Dr. Samreen Malik') {
             this.samreenCounter++;
+            // Skip frozen numbers
+            while (this.frozenSamreenNumbers.includes(this.samreenCounter)) {
+                this.samreenCounter++;
+            }
             this.saveDoctorCounter('samreen', this.samreenCounter);
             return `SAMREEN-#${this.samreenCounter}`;
         }
@@ -206,6 +218,7 @@ class PatientDashboard {
         const samreenChecked = document.getElementById('doctorSamreen').checked;
         const display = document.getElementById('appointmentNumberDisplay');
         const text = document.getElementById('appointmentNumberText');
+        const patientNameInput = document.getElementById('patientName');
         
         let doctor = '';
         if (umarChecked) {
@@ -219,17 +232,31 @@ class PatientDashboard {
             const previewNumber = this.generatePreviewNumber(doctor);
             text.textContent = previewNumber;
             display.className = 'appointment-number-display generated';
+            // Add blue highlight to patient name input
+            patientNameInput.classList.add('doctor-selected');
         } else {
             text.textContent = 'Select Doctor to Generate Number';
             display.className = 'appointment-number-display placeholder';
+            // Remove blue highlight from patient name input
+            patientNameInput.classList.remove('doctor-selected');
         }
     }
 
     generatePreviewNumber(doctor) {
         if (doctor === 'Dr. Umar Farooq') {
-            return `UMAR-#${this.umarCounter + 1}`;
+            let nextNumber = this.umarCounter + 1;
+            // Skip frozen numbers in preview
+            while (this.frozenUmarNumbers.includes(nextNumber)) {
+                nextNumber++;
+            }
+            return `UMAR-#${nextNumber}`;
         } else if (doctor === 'Dr. Samreen Malik') {
-            return `SAMREEN-#${this.samreenCounter + 1}`;
+            let nextNumber = this.samreenCounter + 1;
+            // Skip frozen numbers in preview
+            while (this.frozenSamreenNumbers.includes(nextNumber)) {
+                nextNumber++;
+            }
+            return `SAMREEN-#${nextNumber}`;
         }
         return '';
     }
@@ -277,8 +304,10 @@ class PatientDashboard {
             
             const display = document.getElementById('appointmentNumberDisplay');
             const text = document.getElementById('appointmentNumberText');
+            const patientNameInput = document.getElementById('patientName');
             text.textContent = 'Select Doctor to Generate Number';
             display.className = 'appointment-number-display placeholder';
+            patientNameInput.classList.remove('doctor-selected');
             
             // Show success message
             this.showSuccessMessage(`Patient ${patientName} added successfully with appointment number ${appointmentNumber}`);
@@ -366,31 +395,126 @@ class PatientDashboard {
     displayDoctorPatients(doctorType, patients) {
         const listElement = document.getElementById(`${doctorType}PatientsList`);
         
-        if (patients.length === 0) {
-            listElement.innerHTML = `
+        let html = '';
+        
+        // For Dr. Umar Farooq, display frozen numbers first (only if patient exists)
+        if (doctorType === 'umar') {
+            this.frozenUmarNumbers.forEach(num => {
+                const frozenPatient = patients.find(p => p.appointmentNumber === `UMAR-#${num}`);
+                if (frozenPatient) {
+                    // Display existing frozen patient
+                    html += `
+                        <div class="patient-card frozen-patient">
+                            <div class="patient-info">
+                                <div class="patient-avatar">
+                                    ${frozenPatient.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div class="patient-details">
+                                    <h4>${frozenPatient.name}</h4>
+                                    <p>Added: ${this.formatDate(frozenPatient.dateAdded)}</p>
+                                </div>
+                            </div>
+                            <div class="appointment-number frozen-number">
+                                ${frozenPatient.appointmentNumber}
+                                <i class="fas fa-lock" title="Frozen - Cannot be edited or deleted"></i>
+                            </div>
+                        </div>
+                    `;
+                }
+                // Don't show placeholder for reserved slots
+            });
+            
+            // Display other patients (excluding frozen ones)
+            const nonFrozenPatients = patients.filter(p => {
+                const num = parseInt(p.appointmentNumber.replace('UMAR-#', ''));
+                return !this.frozenUmarNumbers.includes(num);
+            });
+            
+            html += nonFrozenPatients.map(patient => `
+                <div class="patient-card">
+                    <div class="patient-info">
+                        <div class="patient-avatar">
+                            ${patient.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div class="patient-details">
+                            <h4>${patient.name}</h4>
+                            <p>Added: ${this.formatDate(patient.dateAdded)}</p>
+                        </div>
+                    </div>
+                    <div class="appointment-number">${patient.appointmentNumber}</div>
+                </div>
+            `).join('');
+        } else if (doctorType === 'samreen') {
+            // For Dr. Samreen Malik, display frozen numbers first (only if patient exists)
+            this.frozenSamreenNumbers.forEach(num => {
+                const frozenPatient = patients.find(p => p.appointmentNumber === `SAMREEN-#${num}`);
+                if (frozenPatient) {
+                    // Display existing frozen patient
+                    html += `
+                        <div class="patient-card frozen-patient">
+                            <div class="patient-info">
+                                <div class="patient-avatar">
+                                    ${frozenPatient.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div class="patient-details">
+                                    <h4>${frozenPatient.name}</h4>
+                                    <p>Added: ${this.formatDate(frozenPatient.dateAdded)}</p>
+                                </div>
+                            </div>
+                            <div class="appointment-number frozen-number">
+                                ${frozenPatient.appointmentNumber}
+                                <i class="fas fa-lock" title="Frozen - Cannot be edited or deleted"></i>
+                            </div>
+                        </div>
+                    `;
+                }
+                // Don't show placeholder for reserved slots
+            });
+            
+            // Display other patients (excluding frozen ones)
+            const nonFrozenPatients = patients.filter(p => {
+                const num = parseInt(p.appointmentNumber.replace('SAMREEN-#', ''));
+                return !this.frozenSamreenNumbers.includes(num);
+            });
+            
+            html += nonFrozenPatients.map(patient => `
+                <div class="patient-card">
+                    <div class="patient-info">
+                        <div class="patient-avatar">
+                            ${patient.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div class="patient-details">
+                            <h4>${patient.name}</h4>
+                            <p>Added: ${this.formatDate(patient.dateAdded)}</p>
+                        </div>
+                    </div>
+                    <div class="appointment-number">${patient.appointmentNumber}</div>
+                </div>
+            `).join('');
+        }
+        
+        if (html === '') {
+            html = `
                 <div class="empty-state">
                     <i class="fas fa-user-plus"></i>
                     <h3>No Patients Yet</h3>
                     <p>Add patients to see them here</p>
                 </div>
             `;
-            return;
         }
-
-        listElement.innerHTML = patients.map(patient => `
-            <div class="patient-card">
-                <div class="patient-info">
-                    <div class="patient-avatar">
-                        ${patient.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div class="patient-details">
-                        <h4>${patient.name}</h4>
-                        <p>Added: ${this.formatDate(patient.dateAdded)}</p>
-                    </div>
-                </div>
-                <div class="appointment-number">${patient.appointmentNumber}</div>
-            </div>
-        `).join('');
+        
+        listElement.innerHTML = html;
+    }
+    
+    isFrozenNumber(appointmentNumber, doctor) {
+        if (doctor === 'Dr. Umar Farooq') {
+            const num = parseInt(appointmentNumber.replace('UMAR-#', ''));
+            return this.frozenUmarNumbers.includes(num);
+        } else if (doctor === 'Dr. Samreen Malik') {
+            const num = parseInt(appointmentNumber.replace('SAMREEN-#', ''));
+            return this.frozenSamreenNumbers.includes(num);
+        }
+        return false;
     }
 
     formatDate(dateString) {
@@ -418,19 +542,24 @@ class PatientDashboard {
         
         if (confirm('Are you sure you want to reset ALL data? This cannot be undone!')) {
             try {
-                // Delete all patients
+                // Delete all patients except frozen ones
                 const patientsSnapshot = await getDocs(collection(this.db, 'patients'));
-                const deletePromises = patientsSnapshot.docs.map(doc => deleteDoc(doc.ref));
+                const deletePromises = patientsSnapshot.docs
+                    .filter(doc => {
+                        const patient = doc.data();
+                        return !this.isFrozenNumber(patient.appointmentNumber, patient.doctor);
+                    })
+                    .map(doc => deleteDoc(doc.ref));
                 await Promise.all(deletePromises);
                 
-                // Reset counters
+                // Reset counters (but keep frozen numbers reserved)
                 this.umarCounter = 0;
                 this.samreenCounter = 0;
                 await this.saveDoctorCounter('umar', 0);
                 await this.saveDoctorCounter('samreen', 0);
                 
                 this.closeResetModal();
-                this.showSuccessMessage('All data has been reset successfully!');
+                this.showSuccessMessage('All data has been reset successfully! (Frozen numbers preserved)');
             } catch (error) {
                 console.error('Error resetting data:', error);
                 this.showErrorMessage('Failed to reset data. Please try again.');
