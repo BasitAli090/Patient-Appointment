@@ -1,0 +1,147 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.list-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+.list-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 25px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.list-header h1 {
+    font-size: 2rem;
+    font-weight: 600;
+}
+
+.btn-refresh {
+    padding: 10px 20px;
+    border: 2px solid white;
+    border-radius: 8px;
+    background: transparent;
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-refresh:hover {
+    background: white;
+    color: #667eea;
+}
+
+.list-content {
+    padding: 30px;
+}
+
+.appointment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.list-item {
+    display: grid;
+    grid-template-columns: 80px 1fr auto 30px;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border-left: 4px solid #667eea;
+    transition: all 0.3s ease;
+}
+
+.list-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.list-item.available {
+    background: #d4edda;
+    border-left-color: #28a745;
+}
+
+.list-number {
+    font-weight: 700;
+    color: #667eea;
+    font-size: 1.3rem;
+    min-width: 80px;
+}
+
+.list-item.available .list-number {
+    color: #28a745;
+}
+
+.list-name {
+    font-weight: 600;
+    color: #333;
+    font-size: 1.1rem;
+}
+
+.list-time {
+    color: #666;
+    font-size: 0.95rem;
+    text-align: right;
+}
+
+.availability-checkbox {
+    width: 25px;
+    height: 25px;
+    cursor: pointer;
+    accent-color: #28a745;
+}
+
+.empty-message {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+    font-size: 1.2rem;
+}
+
+@media (max-width: 768px) {
+    .list-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .list-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .list-item {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .list-time {
+        text-align: left;
+    }
+    
+    .availability-checkbox {
+        justify-self: start;
+    }
+}
+

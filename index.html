@@ -3,225 +3,193 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Al Farooq Kidney Center - Patient Dashboard</title>
+    <title>Al Farooq Kidney Center & Ultrasound Clinic</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Firebase SDK -->
-    <script type="module">
-        // Import the functions you need from the SDKs you need
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, onSnapshot, query, orderBy, updateDoc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-analytics.js";
-        
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyDVsnnwlKe2-76-3UzKuVLODRLHu-YxoBU",
-            authDomain: "al-farooq-9c8a2.firebaseapp.com",
-            projectId: "al-farooq-9c8a2",
-            storageBucket: "al-farooq-9c8a2.firebasestorage.app",
-            messagingSenderId: "540434838487",
-            appId: "1:540434838487:web:823b924d93f275b93d1192",
-            measurementId: "G-KDTV4LLJMY"
-        };
-        
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const analytics = getAnalytics(app);
-        
-        // Make Firebase available globally
-        window.db = db;
-        window.collection = collection;
-        window.addDoc = addDoc;
-        window.getDocs = getDocs;
-        window.deleteDoc = deleteDoc;
-        window.doc = doc;
-        window.onSnapshot = onSnapshot;
-        window.query = query;
-        window.orderBy = orderBy;
-        window.updateDoc = updateDoc;
-    </script>
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
-        <header class="header">
-            <div class="logo-section">
-                <div class="logo-icon">
-                    <i class="fas fa-hospital"></i>
-                </div>
-                <div class="logo-text">
-                    <h1>Al Farooq Kidney Center</h1>
-                    <p>Patient Appointment Management</p>
-                </div>
-            </div>
-            <div class="header-actions">
-                <button class="btn btn-refresh" onclick="refreshDashboard()">
-                    <i class="fas fa-sync-alt"></i>
-                    <span>Refresh</span>
-                </button>
-                <button class="btn btn-list" onclick="scrollToPatientList()">
-                    <i class="fas fa-list"></i>
-                    <span>Patient List</span>
-                </button>
-                <button class="btn btn-reset" onclick="showResetModal()">
-                    <i class="fas fa-undo"></i>
-                    <span>Reset All</span>
-                </button>
+        <header>
+            <h1>Al Farooq Kidney Center & Ultrasound Clinic</h1>
+            <div class="date-time-display" id="dateTimeDisplay"></div>
+            <div class="header-buttons">
+                <button id="appointmentListBtn" class="btn-list">📋 Appointment List</button>
+                <button id="yesterdayAppointmentBtn" class="btn-list">📅 Yesterday Appointment</button>
             </div>
         </header>
-
-        <!-- Dashboard Stats -->
-        <div class="stats-section">
-            <div class="stat-card total">
-                <div class="stat-icon">
-                    <i class="fas fa-users"></i>
-                </div>
+        
+        <!-- Statistics Cards -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
                 <div class="stat-content">
-                    <h3 id="totalPatients">0</h3>
-                    <p>Total Patients</p>
+                    <h3 id="totalTodayStat">0</h3>
+                    <p>Today's Appointments</p>
                 </div>
             </div>
-            <div class="stat-card umar">
-                <div class="stat-icon">
-                    <i class="fas fa-user-md"></i>
-                </div>
+            <div class="stat-card">
+                <div class="stat-icon">👨‍⚕️</div>
                 <div class="stat-content">
-                    <h3 id="umarPatients">0</h3>
-                    <p>Dr. Umar Farooq</p>
+                    <h3 id="umarTodayStat">0</h3>
+                    <p>Dr Umar Farooq - Today</p>
                 </div>
             </div>
-            <div class="stat-card samreen">
-                <div class="stat-icon">
-                    <i class="fas fa-user-nurse"></i>
-                </div>
+            <div class="stat-card">
+                <div class="stat-icon">👩‍⚕️</div>
                 <div class="stat-content">
-                    <h3 id="samreenPatients">0</h3>
-                    <p>Dr. Samreen Malik</p>
+                    <h3 id="samreenTodayStat">0</h3>
+                    <p>Dr Samreen Malik - Today</p>
                 </div>
             </div>
-            <div class="stat-card today">
-                <div class="stat-icon">
-                    <i class="fas fa-calendar-day"></i>
-                </div>
+            <div class="stat-card">
+                <div class="stat-icon">📅</div>
                 <div class="stat-content">
-                    <h3 id="todayPatients">0</h3>
-                    <p>Today's Patients</p>
+                    <h3 id="yesterdayStat">0</h3>
+                    <p>Yesterday's Appointments</p>
                 </div>
             </div>
         </div>
-
-        <!-- Main Content -->
-        <div class="main-content">
-            <!-- Add Patient Section -->
-            <div class="add-patient-section">
-                <div class="section-header">
-                    <h2><i class="fas fa-user-plus"></i> Add New Patient</h2>
+        
+        <div class="dashboard">
+            <!-- Dr Umar Farooq Section -->
+            <div class="doctor-section">
+                <div class="doctor-header">
+                    <h2>Dr Umar Farooq</h2>
                 </div>
-                <div class="add-patient-form">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="patientName">Patient Name *</label>
-                            <input type="text" id="patientName" placeholder="Enter patient name" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Select Doctor *</label>
-                            <div class="doctor-selection">
-                                <div class="doctor-option" onclick="selectDoctor('Dr. Umar Farooq')">
-                                    <input type="radio" id="doctorUmar" name="doctor" value="Dr. Umar Farooq">
-                                    <label for="doctorUmar" class="doctor-label umar">
-                                        <i class="fas fa-user-md"></i>
-                                        <span>Dr. Umar Farooq</span>
-                                        <i class="fas fa-check"></i>
-                                    </label>
-                                </div>
-                                <div class="doctor-option" onclick="selectDoctor('Dr. Samreen Malik')">
-                                    <input type="radio" id="doctorSamreen" name="doctor" value="Dr. Samreen Malik">
-                                    <label for="doctorSamreen" class="doctor-label samreen">
-                                        <i class="fas fa-user-nurse"></i>
-                                        <span>Dr. Samreen Malik</span>
-                                        <i class="fas fa-check"></i>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
+                <div class="name-input-section">
+                    <label for="umarName">Patient Name:</label>
+                    <input type="text" id="umarName" class="name-input" placeholder="Enter patient name">
+                </div>
+                <div class="appointment-controls">
+                    <button id="generateUmar" class="btn-primary">Generate Appointment</button>
+                    <button id="clearUmar" class="btn-secondary">Clear</button>
+                </div>
+                <div class="appointment-display">
+                    <div class="current-appointment">
+                        <span class="label">Current Appointment No:</span>
+                        <span id="umarAppointment" class="appointment-number">-</span>
                     </div>
-                    <div class="appointment-number-display" id="appointmentNumberDisplay">
-                        <span id="appointmentNumberText">Select Doctor to Generate Number</span>
-                    </div>
-                    <button class="btn btn-save" onclick="addPatient()">
-                        <i class="fas fa-save"></i>
-                        <span>Add/Save Patient</span>
-                    </button>
+                    <div class="patient-name-display" id="umarPatientName"></div>
+                </div>
+                <div class="appointment-history">
+                    <h3>Recent Appointments</h3>
+                    <div id="umarHistory" class="history-list"></div>
                 </div>
             </div>
 
-            <!-- Patient Lists Section -->
-            <div class="patient-lists-section">
-                <div class="section-header">
-                    <h2><i class="fas fa-list"></i> Patient Appointment Lists</h2>
-                    <div class="filter-controls">
-                        <select id="doctorFilter" onchange="filterPatients()">
-                            <option value="">All Doctors</option>
-                            <option value="Dr. Umar Farooq">Dr. Umar Farooq</option>
-                            <option value="Dr. Samreen Malik">Dr. Samreen Malik</option>
-                        </select>
-                    </div>
+            <!-- Dr Samreen Malik Section -->
+            <div class="doctor-section">
+                <div class="doctor-header">
+                    <h2>Dr Samreen Malik</h2>
                 </div>
-
-                <!-- Dr. Umar Farooq Patients -->
-                <div class="doctor-section umar-section">
-                    <div class="doctor-header">
-                        <div class="doctor-info">
-                            <i class="fas fa-user-md"></i>
-                            <h3>Dr. Umar Farooq</h3>
-                            <span class="patient-count" id="umarCount">0 patients</span>
-                        </div>
-                    </div>
-                    <div class="patient-list" id="umarPatientsList">
-                        <!-- Patients will be loaded here -->
-                    </div>
+                <div class="name-input-section">
+                    <label for="samreenName">Patient Name:</label>
+                    <input type="text" id="samreenName" class="name-input" placeholder="Enter patient name">
                 </div>
-
-                <!-- Dr. Samreen Malik Patients -->
-                <div class="doctor-section samreen-section">
-                    <div class="doctor-header">
-                        <div class="doctor-info">
-                            <i class="fas fa-user-nurse"></i>
-                            <h3>Dr. Samreen Malik</h3>
-                            <span class="patient-count" id="samreenCount">0 patients</span>
-                        </div>
+                <div class="appointment-controls">
+                    <button id="generateSamreen" class="btn-primary">Generate Appointment</button>
+                    <button id="clearSamreen" class="btn-secondary">Clear</button>
+                </div>
+                <div class="appointment-display">
+                    <div class="current-appointment">
+                        <span class="label">Current Appointment No:</span>
+                        <span id="samreenAppointment" class="appointment-number">-</span>
                     </div>
-                    <div class="patient-list" id="samreenPatientsList">
-                        <!-- Patients will be loaded here -->
+                    <div class="patient-name-display" id="samreenPatientName"></div>
+                </div>
+                <div class="appointment-history">
+                    <h3>Recent Appointments</h3>
+                    <div id="samreenHistory" class="history-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Appointment List Modal -->
+    <div id="appointmentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Appointment List</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="doctor-list-section">
+                    <h3>Dr Umar Farooq</h3>
+                    <div id="umarFullList" class="full-appointment-list"></div>
+                </div>
+                <div class="doctor-list-section">
+                    <h3>Dr Samreen Malik</h3>
+                    <div id="samreenFullList" class="full-appointment-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Yesterday Appointment Modal -->
+    <div id="yesterdayModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Yesterday's Appointments</h2>
+                <div class="modal-header-actions">
+                    <button id="patientListBtn" class="btn-patient-list">Patient List</button>
+                    <button id="clearYesterdayList" class="btn-clear-yesterday">Clear List</button>
+                    <span class="close-yesterday-modal">&times;</span>
+                </div>
+            </div>
+            <div class="modal-body" id="yesterdayModalBody">
+                <div class="doctor-list-section">
+                    <h3>Dr Umar Farooq</h3>
+                    <div class="yesterday-input-section">
+                        <label for="umarYesterdayName">Patient Name:</label>
+                        <input type="text" id="umarYesterdayName" class="name-input" placeholder="Enter patient name">
+                        <button id="generateUmarYesterday" class="btn-primary">Generate Appointment</button>
+                    </div>
+                    <div id="umarYesterdayList" class="full-appointment-list"></div>
+                </div>
+                <div class="doctor-list-section">
+                    <h3>Dr Samreen Malik</h3>
+                    <div class="yesterday-input-section">
+                        <label for="samreenYesterdayName">Patient Name:</label>
+                        <input type="text" id="samreenYesterdayName" class="name-input" placeholder="Enter patient name">
+                        <button id="generateSamreenYesterday" class="btn-primary">Generate Appointment</button>
+                    </div>
+                    <div id="samreenYesterdayList" class="full-appointment-list"></div>
+                </div>
+            </div>
+            <div class="modal-body patient-list-view" id="patientListView" style="display: none;">
+                <div class="patient-list-container">
+                    <div class="patient-list-section">
+                        <h3>Dr Umar Farooq - Patients</h3>
+                        <div id="umarPatientList" class="patient-list"></div>
+                    </div>
+                    <div class="patient-list-section">
+                        <h3>Dr Samreen Malik - Patients</h3>
+                        <div id="samreenPatientList" class="patient-list"></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Reset Modal -->
-    <div id="resetModal" class="modal">
-        <div class="modal-content">
+    <!-- Password Modal -->
+    <div id="passwordModal" class="modal">
+        <div class="modal-content password-modal-content">
             <div class="modal-header">
-                <h2><i class="fas fa-exclamation-triangle"></i> Reset All Data</h2>
-                <span class="close" onclick="closeResetModal()">&times;</span>
+                <h2>Enter Password to Clear</h2>
+                <span class="close-password-modal">&times;</span>
             </div>
             <div class="modal-body">
-                <div class="warning-message">
-                    <i class="fas fa-warning"></i>
-                    <p>This action will permanently delete ALL patient data and reset the system. This cannot be undone!</p>
+                <div class="password-input-section">
+                    <label for="passwordInput">Password:</label>
+                    <input type="password" id="passwordInput" class="password-input" placeholder="Enter password">
+                    <div id="passwordError" class="password-error"></div>
+                    <div class="password-buttons">
+                        <button id="confirmPassword" class="btn-primary">Confirm</button>
+                        <button id="cancelPassword" class="btn-secondary">Cancel</button>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="resetPassword">Enter Password to Confirm:</label>
-                    <input type="password" id="resetPassword" placeholder="Enter password" required>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-cancel" onclick="closeResetModal()">Cancel</button>
-                <button class="btn btn-danger" onclick="resetAllData()">Reset All Data</button>
             </div>
         </div>
     </div>
@@ -229,3 +197,4 @@
     <script src="script.js"></script>
 </body>
 </html>
+
